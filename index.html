@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>TaskFlow — Project Management</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-brand">
+    <div class="brand-icon">⬡</div>
+    <span class="brand-name">TaskFlow</span>
+  </div>
+
+  <nav class="sidebar-nav">
+    <a class="nav-item active" data-view="dashboard" href="#">
+      <span class="nav-icon">◈</span><span class="nav-label">Dashboard</span>
+    </a>
+    <a class="nav-item" data-view="projects" href="#">
+      <span class="nav-icon">▦</span><span class="nav-label">Projects</span>
+    </a>
+    <a class="nav-item" data-view="kanban" href="#">
+      <span class="nav-icon">⊞</span><span class="nav-label">Kanban Board</span>
+    </a>
+    <a class="nav-item" data-view="team" href="#">
+      <span class="nav-icon">◎</span><span class="nav-label">Team</span>
+    </a>
+  </nav>
+
+  <div class="sidebar-footer">
+    <div class="user-avatar-sm">SH</div>
+    <div class="user-info">
+      <span class="user-name">Sherlock</span>
+      <span class="user-role">Admin</span>
+    </div>
+    <button class="settings-btn" id="settingsBtn">⚙</button>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main class="main" id="main">
+
+  <!-- TOP BAR -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <button class="sidebar-toggle" id="sidebarToggle">☰</button>
+      <div class="breadcrumb">
+        <span id="breadcrumbText">Dashboard</span>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <div class="search-bar">
+        <span class="search-icon">⌕</span>
+        <input type="text" placeholder="Search tasks, projects..." id="searchInput"/>
+      </div>
+      <button class="btn-new" id="newTaskBtn">+ New Task</button>
+      <div class="notif-btn" id="notifBtn">
+        🔔<span class="notif-badge">3</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ======== DASHBOARD VIEW ======== -->
+  <div class="view active" id="view-dashboard">
+    <div class="view-header">
+      <div>
+        <h1 class="view-title">Good morning, Sherlock 👋</h1>
+        <p class="view-sub">Here's what's happening across your workspace today.</p>
+      </div>
+      <div class="date-badge" id="dateBadge"></div>
+    </div>
+
+    <!-- STAT CARDS -->
+    <div class="stat-grid">
+      <div class="stat-card" style="--accent:#6ee7b7">
+        <div class="stat-top">
+          <span class="stat-icon">✓</span>
+          <span class="stat-trend up">↑ 12%</span>
+        </div>
+        <div class="stat-value" id="statDone">0</div>
+        <div class="stat-label">Tasks Completed</div>
+        <div class="stat-bar"><div class="stat-bar-fill" style="--pct:72%;background:var(--accent)"></div></div>
+      </div>
+      <div class="stat-card" style="--accent:#93c5fd">
+        <div class="stat-top">
+          <span class="stat-icon">◷</span>
+          <span class="stat-trend up">↑ 5%</span>
+        </div>
+        <div class="stat-value" id="statActive">0</div>
+        <div class="stat-label">In Progress</div>
+        <div class="stat-bar"><div class="stat-bar-fill" style="--pct:48%;background:var(--accent)"></div></div>
+      </div>
+      <div class="stat-card" style="--accent:#fca5a5">
+        <div class="stat-top">
+          <span class="stat-icon">⚠</span>
+          <span class="stat-trend down">↑ 2%</span>
+        </div>
+        <div class="stat-value" id="statOverdue">0</div>
+        <div class="stat-label">Overdue</div>
+        <div class="stat-bar"><div class="stat-bar-fill" style="--pct:18%;background:var(--accent)"></div></div>
+      </div>
+      <div class="stat-card" style="--accent:#c4b5fd">
+        <div class="stat-top">
+          <span class="stat-icon">◈</span>
+          <span class="stat-trend up">↑ 3</span>
+        </div>
+        <div class="stat-value" id="statProjects">0</div>
+        <div class="stat-label">Active Projects</div>
+        <div class="stat-bar"><div class="stat-bar-fill" style="--pct:60%;background:var(--accent)"></div></div>
+      </div>
+    </div>
+
+    <!-- CHARTS ROW -->
+    <div class="charts-row">
+      <div class="chart-card wide">
+        <div class="chart-header">
+          <span class="chart-title">Task Activity</span>
+          <div class="chart-tabs">
+            <button class="ctab active" data-range="week">Week</button>
+            <button class="ctab" data-range="month">Month</button>
+          </div>
+        </div>
+        <canvas id="activityChart" height="200"></canvas>
+      </div>
+      <div class="chart-card">
+        <div class="chart-header">
+          <span class="chart-title">By Status</span>
+        </div>
+        <canvas id="statusChart" height="200"></canvas>
+      </div>
+    </div>
+
+    <!-- RECENT ACTIVITY + UPCOMING -->
+    <div class="bottom-row">
+      <div class="card recent-activity">
+        <div class="card-header">
+          <span class="card-title">Recent Activity</span>
+          <button class="card-link">View all →</button>
+        </div>
+        <ul class="activity-list" id="activityList"></ul>
+      </div>
+      <div class="card upcoming-tasks">
+        <div class="card-header">
+          <span class="card-title">Due Soon</span>
+          <button class="card-link" data-view="kanban">See board →</button>
+        </div>
+        <ul class="due-list" id="dueList"></ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======== PROJECTS VIEW ======== -->
+  <div class="view" id="view-projects">
+    <div class="view-header">
+      <div>
+        <h1 class="view-title">Projects</h1>
+        <p class="view-sub">Manage all your active and archived projects.</p>
+      </div>
+      <button class="btn-primary" id="newProjectBtn">+ New Project</button>
+    </div>
+
+    <div class="filter-bar">
+      <button class="filter-btn active" data-filter="all">All</button>
+      <button class="filter-btn" data-filter="active">Active</button>
+      <button class="filter-btn" data-filter="completed">Completed</button>
+      <button class="filter-btn" data-filter="on-hold">On Hold</button>
+    </div>
+
+    <div class="projects-grid" id="projectsGrid"></div>
+  </div>
+
+  <!-- ======== KANBAN VIEW ======== -->
+  <div class="view" id="view-kanban">
+    <div class="view-header">
+      <div>
+        <h1 class="view-title">Kanban Board</h1>
+        <p class="view-sub" id="kanbanProjectLabel">All tasks across projects</p>
+      </div>
+      <div class="kanban-controls">
+        <select class="select-styled" id="kanbanProjectFilter">
+          <option value="all">All Projects</option>
+        </select>
+        <button class="btn-primary" id="kanbanNewTaskBtn">+ Add Task</button>
+      </div>
+    </div>
+    <div class="kanban-board" id="kanbanBoard">
+      <div class="kanban-col" id="col-backlog" data-status="backlog">
+        <div class="col-header">
+          <span class="col-dot" style="background:#94a3b8"></span>
+          <span class="col-title">Backlog</span>
+          <span class="col-count" id="count-backlog">0</span>
+          <button class="col-add-btn" data-status="backlog">+</button>
+        </div>
+        <div class="col-body droppable" data-status="backlog" id="drop-backlog"></div>
+      </div>
+      <div class="kanban-col" id="col-todo" data-status="todo">
+        <div class="col-header">
+          <span class="col-dot" style="background:#60a5fa"></span>
+          <span class="col-title">To Do</span>
+          <span class="col-count" id="count-todo">0</span>
+          <button class="col-add-btn" data-status="todo">+</button>
+        </div>
+        <div class="col-body droppable" data-status="todo" id="drop-todo"></div>
+      </div>
+      <div class="kanban-col" id="col-inprogress" data-status="inprogress">
+        <div class="col-header">
+          <span class="col-dot" style="background:#f59e0b"></span>
+          <span class="col-title">In Progress</span>
+          <span class="col-count" id="count-inprogress">0</span>
+          <button class="col-add-btn" data-status="inprogress">+</button>
+        </div>
+        <div class="col-body droppable" data-status="inprogress" id="drop-inprogress"></div>
+      </div>
+      <div class="kanban-col" id="col-review" data-status="review">
+        <div class="col-header">
+          <span class="col-dot" style="background:#a78bfa"></span>
+          <span class="col-title">In Review</span>
+          <span class="col-count" id="count-review">0</span>
+          <button class="col-add-btn" data-status="review">+</button>
+        </div>
+        <div class="col-body droppable" data-status="review" id="drop-review"></div>
+      </div>
+      <div class="kanban-col" id="col-done" data-status="done">
+        <div class="col-header">
+          <span class="col-dot" style="background:#34d399"></span>
+          <span class="col-title">Done</span>
+          <span class="col-count" id="count-done">0</span>
+          <button class="col-add-btn" data-status="done">+</button>
+        </div>
+        <div class="col-body droppable" data-status="done" id="drop-done"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======== TEAM VIEW ======== -->
+  <div class="view" id="view-team">
+    <div class="view-header">
+      <div>
+        <h1 class="view-title">Team</h1>
+        <p class="view-sub">Manage members, roles, and permissions.</p>
+      </div>
+      <button class="btn-primary" id="inviteMemberBtn">+ Invite Member</button>
+    </div>
+
+    <div class="team-stats">
+      <div class="team-stat"><span class="ts-val" id="teamTotal">0</span><span class="ts-lbl">Total Members</span></div>
+      <div class="team-stat"><span class="ts-val" id="teamAdmins">0</span><span class="ts-lbl">Admins</span></div>
+      <div class="team-stat"><span class="ts-val" id="teamDev">0</span><span class="ts-lbl">Developers</span></div>
+      <div class="team-stat"><span class="ts-val" id="teamDesign">0</span><span class="ts-lbl">Designers</span></div>
+    </div>
+
+    <div class="team-grid" id="teamGrid"></div>
+  </div>
+
+</main>
+
+<!-- ======== MODALS ======== -->
+
+<!-- Task Modal -->
+<div class="modal-overlay" id="taskModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 class="modal-title" id="taskModalTitle">New Task</h2>
+      <button class="modal-close" data-modal="taskModal">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Task Title *</label>
+        <input type="text" class="form-input" id="taskTitle" placeholder="What needs to be done?"/>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Project</label>
+          <select class="form-input" id="taskProject"></select>
+        </div>
+        <div class="form-group">
+          <label>Status</label>
+          <select class="form-input" id="taskStatus">
+            <option value="backlog">Backlog</option>
+            <option value="todo">To Do</option>
+            <option value="inprogress">In Progress</option>
+            <option value="review">In Review</option>
+            <option value="done">Done</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Priority</label>
+          <select class="form-input" id="taskPriority">
+            <option value="low">Low</option>
+            <option value="medium" selected>Medium</option>
+            <option value="high">High</option>
+            <option value="critical">Critical</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Assignee</label>
+          <select class="form-input" id="taskAssignee"></select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Due Date</label>
+        <input type="date" class="form-input" id="taskDue"/>
+      </div>
+      <div class="form-group">
+        <label>Description</label>
+        <textarea class="form-input" id="taskDesc" rows="3" placeholder="Add more detail..."></textarea>
+      </div>
+      <div class="form-group">
+        <label>Tags (comma separated)</label>
+        <input type="text" class="form-input" id="taskTags" placeholder="frontend, bug, design..."/>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" data-modal="taskModal">Cancel</button>
+      <button class="btn-primary" id="saveTaskBtn">Save Task</button>
+    </div>
+  </div>
+</div>
+
+<!-- Project Modal -->
+<div class="modal-overlay" id="projectModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 class="modal-title">New Project</h2>
+      <button class="modal-close" data-modal="projectModal">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Project Name *</label>
+        <input type="text" class="form-input" id="projName" placeholder="My Awesome Project"/>
+      </div>
+      <div class="form-group">
+        <label>Description</label>
+        <textarea class="form-input" id="projDesc" rows="2" placeholder="What is this project about?"></textarea>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Status</label>
+          <select class="form-input" id="projStatus">
+            <option value="active">Active</option>
+            <option value="on-hold">On Hold</option>
+            <option value="completed">Completed</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Color</label>
+          <input type="color" class="form-input" id="projColor" value="#6ee7b7" style="height:42px;padding:4px 8px;cursor:pointer"/>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Start Date</label>
+          <input type="date" class="form-input" id="projStart"/>
+        </div>
+        <div class="form-group">
+          <label>Deadline</label>
+          <input type="date" class="form-input" id="projDeadline"/>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" data-modal="projectModal">Cancel</button>
+      <button class="btn-primary" id="saveProjBtn">Create Project</button>
+    </div>
+  </div>
+</div>
+
+<!-- Invite Member Modal -->
+<div class="modal-overlay" id="memberModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 class="modal-title">Invite Team Member</h2>
+      <button class="modal-close" data-modal="memberModal">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Full Name *</label>
+        <input type="text" class="form-input" id="memberName" placeholder="Jane Doe"/>
+      </div>
+      <div class="form-group">
+        <label>Email *</label>
+        <input type="email" class="form-input" id="memberEmail" placeholder="jane@company.com"/>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Role</label>
+          <select class="form-input" id="memberRole">
+            <option value="Admin">Admin</option>
+            <option value="Developer" selected>Developer</option>
+            <option value="Designer">Designer</option>
+            <option value="Manager">Manager</option>
+            <option value="QA">QA Engineer</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Department</label>
+          <input type="text" class="form-input" id="memberDept" placeholder="Engineering"/>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" data-modal="memberModal">Cancel</button>
+      <button class="btn-primary" id="saveMemberBtn">Send Invite</button>
+    </div>
+  </div>
+</div>
+
+<!-- Task Detail Modal -->
+<div class="modal-overlay" id="taskDetailModal">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <h2 class="modal-title" id="detailTitle">Task Details</h2>
+      <button class="modal-close" data-modal="taskDetailModal">✕</button>
+    </div>
+    <div class="modal-body" id="taskDetailBody"></div>
+    <div class="modal-footer">
+      <button class="btn-ghost btn-delete-task" id="deleteTaskBtn">🗑 Delete</button>
+      <button class="btn-ghost" data-modal="taskDetailModal">Close</button>
+      <button class="btn-primary" id="editTaskBtn">✎ Edit</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script src="script.js"></script>
+</body>
+</html>
